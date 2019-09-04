@@ -42,8 +42,8 @@ class Pneumatics(object):
         # TODO CHECK TIME!!! AND ADD SOME HIGH QUALITY TIMESTAMPS (assume 1 sec rn)
         ts_sec = self.timer.getFPGATimestamp()
 
-        if
+        #if
 
-        self.pressure_observations.append((((250.0 * self.pressure_sensor.getVoltage()) / 5.0) - 25.0))
+       # self.pressure_observations.append((((250.0 * self.pressure_sensor.getVoltage()) / 5.0) - 25.0))
 
 
