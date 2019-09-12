@@ -1,9 +1,9 @@
-import wpilib
+from wpilib import Joystick
 
 
 class DriverStation(object):
-    left_joystick: wpilib.Joystick
-    right_joystick: wpilib.Joystick
+    left_joystick: Joystick
+    right_joystick: Joystick
 
     def __init__(self, left_stick, right_stick):
         self.left_joystick = left_stick

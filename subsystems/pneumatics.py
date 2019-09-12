@@ -34,9 +34,12 @@ class Pneumatics(object):
             self.vent_solenoid.set(False)
 
     def get_psi(self):
-        # FIXME check math
-        psi = (((250.0 * self.pressure_sensor.getVoltage()) / 5.0) - 25.0)
-        return psi
+        if self.pressure_sensor is not None:
+            # FIXME check math
+            psi = (((250.0 * self.pressure_sensor.getVoltage()) / 5.0) - 25.0)
+            return psi
+        else:
+            return None
 
     def update_pressure(self):
         # TODO CHECK TIME!!! AND ADD SOME HIGH QUALITY TIMESTAMPS (assume 1 sec rn)

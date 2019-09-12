@@ -14,13 +14,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 class ControlSystem:
     BUILTIN = 0
-    BASIC = 0
-
-
-class ControlMode:
-    STOP = -1
-    IDLE = 0
-    GO = 1
+    BASIC = 1
+    PID = 2
+    MPC = 3
 
 
 class TankDrivetrain(object):
@@ -30,7 +26,6 @@ class TankDrivetrain(object):
     right_master: SpeedControllerGroup
 
     SYSTEM: int
-    MODE: int
 
     def __init__(self, left_motors: list, right_motors: list, control_system: int = ControlSystem.BUILTIN):
         self.SYSTEM = control_system
@@ -38,32 +33,38 @@ class TankDrivetrain(object):
         self.left_motors = left_motors
         self.right_motors = right_motors
 
-        self.left_master = SpeedControllerGroup(*self.left_motors)
-        self.right_master = SpeedControllerGroup(*self.right_motors)
-
         # Set control mode
         if self.SYSTEM == ControlSystem.BUILTIN:
+            self.left_master = SpeedControllerGroup(*self.left_motors)
+            self.right_master = SpeedControllerGroup(*self.right_motors)
+
             self.drivetrain = wpilib.drive.DifferentialDrive(self.left_master, self.right_master)
 
             self.drivetrain.setSafetyEnabled(True)
             self.drivetrain.tankDrive(0.0, 0.0)
             self.drivetrain.setExpiration(0.5)
 
+        else:
+            for motor in [*self.left_motors, *self.right_motors]:
+                motor.set(motor.ControlMode.PercentOutput, 0.0)
+
         # TODO add self-diagnostics
 
-        self.MODE = ControlMode.IDLE
-
-    def set(self, left, right):
+    def set(self, left=0.0, right=0.0):
         if self.SYSTEM == ControlSystem.BUILTIN:
-            if self.MODE == ControlMode.STOP:
-                self.stop()
-            else:
-                self.drivetrain.tankDrive(leftSpeed=left, rightSpeed=right)
-                self.MODE = ControlMode.GO
+            self.drivetrain.tankDrive(leftSpeed=left, rightSpeed=right)
+
+        elif self.SYSTEM == ControlSystem.BASIC:
+            for motor in self.left_motors:
+                motor.set(motor.ControlMode.PercentOutput, left)
+
+            for motor in self.right_motors:
+                motor.set(motor.ControlMode.PercentOutput, right)
 
     def stop(self):
         if self.SYSTEM == ControlSystem.BUILTIN:
             self.drivetrain.tankDrive(0.0, 0.0)
-        if self.MODE != ControlMode.STOP:
-            self.MODE = ControlMode.STOP
+        elif self.SYSTEM == ControlSystem.BASIC:
+            for motor in [*self.left_motors, *self.right_motors]:
+                motor.set(motor.ControlMode.PercentOutput, 0.0)
 
