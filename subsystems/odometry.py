@@ -1,5 +1,4 @@
-from math import cos, sin
-import numpy as np
+from math import cos, sin, pi
 
 from wpilib import Encoder
 from navx import AHRS
@@ -7,7 +6,7 @@ from navx import AHRS
 
 # TODO Check angle constrain function
 def constrain_angle(x):
-    return (x + np.pi) % (2 * np.pi) - np.pi
+    return (x + pi) % (2 * pi) - pi
 
 
 class Pose2D(object):

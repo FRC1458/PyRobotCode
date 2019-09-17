@@ -1,9 +1,9 @@
 import logging
 import time
 
-from wpilib import TimedRobot, Joystick, run
+from wpilib import TimedRobot, XboxController, run, Compressor, DoubleSolenoid
+from ctre import TalonSRX
 
-from subsystems.driver_station import DriverStation
 from robot_map import *
 
 logging.basicConfig(level=logging.DEBUG)
@@ -14,14 +14,9 @@ class BaseRobot(TimedRobot):
     robot: RobotMap
     driver_station: DriverStation
 
-    # TODO ADD ODOMETRY SUBSYSTEM
     def robotInit(self) -> None:
         self.robot = RobotMap()
-        self.driver_station = DriverStation(Joystick(0), Joystick(1))
-
-        # self.joy = wpilib.Joystick(0)
-        # self.motor1 = TalonSRX(10)
-        # self.motor2 = TalonSRX(31)
+        self.driver_station = self.robot.driver_station
 
         print("Robot Initialized!")
 
@@ -32,21 +27,22 @@ class BaseRobot(TimedRobot):
         print("Driver Has Control!")
 
     def teleopPeriodic(self) -> None:
-        self.robot.drivetrain.set(self.ds.left_joystick.getY() * 1.0, self.ds.right_joystick.getY() * 1.0)
+        l, r = self.driver_station.get_control_arcade()
+        self.robot.drivetrain.set(l, r)
 
-        # self.motor1.set(self.motor1.ControlMode.PercentOutput, 0.5)
-        # self.motor2.set(self.motor1.ControlMode.PercentOutput, 0.5)
+        self.robot.beak.update()
 
     def disabledInit(self) -> None:
         self.robot.drivetrain.stop()
 
-        # self.motor1.set(self.motor1.ControlMode.PercentOutput, 0.0)
-        # self.motor2.set(self.motor1.ControlMode.PercentOutput, 0.0)
-
     def disabledPeriodic(self) -> None:
+        pass
+
+    def testInit(self) -> None:
         self.robot.drivetrain.stop()
 
-        # print(self.joy.ds.getStickAxis(0, 0))
+    def testPeriodic(self) -> None:
+        pass
 
 
 if __name__ == "__main__":

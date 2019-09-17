@@ -1,11 +1,10 @@
 import logging
 
 import wpilib
-from ctre import WPI_TalonSRX
 import wpilib.drive
-from wpilib import SpeedControllerGroup
+from wpilib import SpeedControllerGroup, Timer
 from wpilib.interfaces.speedcontroller import SpeedController
-from wpilib import Talon
+from ctre import TalonSRX, NeutralMode
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,19 +21,23 @@ class ControlSystem:
 class TankDrivetrain(object):
     left_motors = []
     left_master: SpeedControllerGroup
+
     right_motors = []
     right_master: SpeedControllerGroup
 
-    SYSTEM: int
+    CONTROL_SYSTEM: int
 
-    def __init__(self, left_motors: list, right_motors: list, control_system: int = ControlSystem.BUILTIN):
-        self.SYSTEM = control_system
+    def __init__(self, timer: Timer, left_motors: list, right_motors: list, control_system: int = ControlSystem.BASIC,
+                 invert_left: bool = True, invert_right: bool = False):
+        self.CONTROL_SYSTEM = control_system
+
+        self.timer = timer
 
         self.left_motors = left_motors
         self.right_motors = right_motors
 
         # Set control mode
-        if self.SYSTEM == ControlSystem.BUILTIN:
+        if self.CONTROL_SYSTEM == ControlSystem.BUILTIN:
             self.left_master = SpeedControllerGroup(*self.left_motors)
             self.right_master = SpeedControllerGroup(*self.right_motors)
 
@@ -45,16 +48,23 @@ class TankDrivetrain(object):
             self.drivetrain.setExpiration(0.5)
 
         else:
-            for motor in [*self.left_motors, *self.right_motors]:
+            for motor in self.left_motors:
+                motor: TalonSRX
+                motor.setNeutralMode(NeutralMode.Brake)
                 motor.set(motor.ControlMode.PercentOutput, 0.0)
+                motor.setInverted(invert_left)
 
-        # TODO add self-diagnostics
+            for motor in self.right_motors:
+                motor: TalonSRX
+                motor.setNeutralMode(NeutralMode.Brake)
+                motor.set(motor.ControlMode.PercentOutput, 0.0)
+                motor.setInverted(invert_right)
 
-    def set(self, left=0.0, right=0.0):
-        if self.SYSTEM == ControlSystem.BUILTIN:
+    def set(self, left, right):
+        if self.CONTROL_SYSTEM == ControlSystem.BUILTIN:
             self.drivetrain.tankDrive(leftSpeed=left, rightSpeed=right)
 
-        elif self.SYSTEM == ControlSystem.BASIC:
+        elif self.CONTROL_SYSTEM == ControlSystem.BASIC:
             for motor in self.left_motors:
                 motor.set(motor.ControlMode.PercentOutput, left)
 
@@ -62,9 +72,24 @@ class TankDrivetrain(object):
                 motor.set(motor.ControlMode.PercentOutput, right)
 
     def stop(self):
-        if self.SYSTEM == ControlSystem.BUILTIN:
+        if self.CONTROL_SYSTEM == ControlSystem.BUILTIN:
             self.drivetrain.tankDrive(0.0, 0.0)
-        elif self.SYSTEM == ControlSystem.BASIC:
+        elif self.CONTROL_SYSTEM == ControlSystem.BASIC:
             for motor in [*self.left_motors, *self.right_motors]:
                 motor.set(motor.ControlMode.PercentOutput, 0.0)
+
+    def test_all_motors(self, motor_percent=0.5, motor_run_time=5.0, cooldown_time=2.5):
+        # TODO add/finish self-diagnostics
+        if self.CONTROL_SYSTEM == ControlSystem.BASIC:
+            for motor in [*self.left_motors, *self.right_motors]:
+                motor: TalonSRX
+
+                motor.set(motor.ControlMode.PercentOutput, motor_percent)
+                self.timer.delay(motor_run_time)
+                motor.set(motor.ControlMode.PercentOutput, motor_percent)
+
+                self.timer.delay(cooldown_time)
+
+
+
 
